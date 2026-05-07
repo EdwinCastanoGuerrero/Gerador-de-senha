@@ -1,4 +1,4 @@
-/* 
+﻿/* 
 Random Password Generator
 -------------------------
 Um gerador de senha aleatória com os seguintes recursos:
@@ -8,86 +8,112 @@ Um gerador de senha aleatória com os seguintes recursos:
 - Pode gerar senhas de 6 a 20 caracteres
 */
 
+const MIN_PASSWORD_LENGTH = 6;
+const MAX_PASSWORD_LENGTH = 20;
+const DEFAULT_PASSWORD_PLACEHOLDER = '[Senha]';
+const SYMBOL_CHARACTERS = '!@#$%^&*()-+';
 
-//Opções
+const passwordLengthInput = document.querySelector('#password_length');
+const checkLowercase = document.querySelector('#check_lowercase');
+const checkUppercase = document.querySelector('#check_uppercase');
+const checkDigits = document.querySelector('#check_digits');
+const checkSymbols = document.querySelector('#check_symbols');
+const passwordOutput = document.querySelector('#password');
+const generateButton = document.querySelector('#btn_generate_password');
+const copyButton = document.querySelector('#btn_copy_to_clipboard');
 
-let passwordLength = document.querySelector('#password_length');
-passwordLength.min = 6;
-passwordLength.max = 20;
+let currentPassword = '';
 
+initializeApp();
 
-//checkbox
+function initializeApp() {
+    passwordLengthInput.min = MIN_PASSWORD_LENGTH;
+    passwordLengthInput.max = MAX_PASSWORD_LENGTH;
+    passwordLengthInput.value = 8;
 
-let checkLowercase = document.querySelector('#check_lowercase');
-let checkUppercase = document.querySelector('#check_uppercase');
-let checkDigits = document.querySelector('#check_digits');
-let checkSymbols = document.querySelector('#check_symbols');
+    passwordOutput.textContent = DEFAULT_PASSWORD_PLACEHOLDER;
 
-let passwordOutput = document.querySelector('#password');
-passwordOutput.innerHTML = "&nbsp;";
+    generateButton.addEventListener('click', handleGeneratePassword);
+    copyButton.addEventListener('click', handleCopyPassword);
+}
 
+function handleGeneratePassword() {
+    const length = parseInt(passwordLengthInput.value, 10);
+    const options = {
+        lowercase: checkLowercase.checked,
+        uppercase: checkUppercase.checked,
+        digits: checkDigits.checked,
+        symbols: checkSymbols.checked,
+    };
 
-//buttons
-
-document.querySelector("#btn_generate_password").addEventListener("click",()=>{
-
-     //validações
-      if(!checkLowercase.checked && !checkUppercase.checked && !checkDigits.checked && !checkSymbols.checked){
-            passwordOutput.innerHTML = "<p>Por favor, selecione pelo menos uma opção.</p>";
-            return;
-      }
-    
-      if(passwordLength.value < 6 || passwordLength.value > 20){
-            passwordOutput.innerHTML = "<p>Por favor, escolha um comprimento entre 6 e 20 caracteres.</p>";
-            return;
-      }
-
-    //resposta
-    passwordOutput.innerHTML = generatePassword(
-        parseInt(passwordLength.value),
-        checkLowercase.checked,
-        checkUppercase.checked,
-        checkDigits.checked,
-        checkSymbols.checked
-    );  
-      
-}); 
-
-document.querySelector("#btn_copy_to_clipboard").addEventListener("click",()=>{
-
-    //validação
-    if(passwordOutput.textContent.length <= 0) {
+    const validationError = validatePasswordOptions(length, options);
+    if (validationError) {
+        showMessage(validationError);
         return;
     }
-    navigator.clipboard.writeText(passwordOutput.textContent);
-});
 
+    currentPassword = generatePassword(length, options);
+    displayPassword(currentPassword);
+}
 
-//funções
-
-
-function generatePassword(length, lowercase, uppercase, digits, symbols) {
-    let Password = '';
-    let chars = '';
-
-    //defininndo password
-
-    if(lowercase) {
-        chars += 'abcdefghijklmnopqrstuvwxyz';
-    }
-    if(uppercase) {
-        chars += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    }
-    if(digits) {
-        chars += '0123456789';
-    }
-    if(symbols) {
-        chars += '!@#$%^&*()-+';
+function handleCopyPassword() {
+    if (!currentPassword) {
+        return;
     }
 
-    for(let i = 0; i < length; i++) {
-        Password += chars.charAt(Math.floor(Math.random() * chars.length));
+    navigator.clipboard.writeText(currentPassword);
+}
+
+function validatePasswordOptions(length, options) {
+    if (!options.lowercase && !options.uppercase && !options.digits && !options.symbols) {
+        return 'Por favor, selecione pelo menos uma opção.';
     }
 
-    return Password;
+    if (Number.isNaN(length) || length < MIN_PASSWORD_LENGTH || length > MAX_PASSWORD_LENGTH) {
+        return `Por favor, escolha um comprimento entre ${MIN_PASSWORD_LENGTH} e ${MAX_PASSWORD_LENGTH} caracteres.`;
+    }
+
+    return '';
+}
+
+function displayPassword(password) {
+    passwordOutput.textContent = password;
+}
+
+function showMessage(message) {
+    passwordOutput.textContent = message;
+}
+
+function generatePassword(length, options) {
+    const characterSet = buildCharacterSet(options);
+    let password = '';
+
+    for (let i = 0; i < length; i += 1) {
+        const randomIndex = Math.floor(Math.random() * characterSet.length);
+        password += characterSet[randomIndex];
+    }
+
+    return password;
+}
+
+function buildCharacterSet(options) {
+    let characterSet = '';
+
+    if (options.lowercase) {
+        characterSet += 'abcdefghijklmnopqrstuvwxyz';
+    }
+
+    if (options.uppercase) {
+        characterSet += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    }
+
+    if (options.digits) {
+        characterSet += '0123456789';
+    }
+
+    if (options.symbols) {
+        characterSet += SYMBOL_CHARACTERS;
+    }
+
+    return characterSet;
 }
